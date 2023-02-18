@@ -14,7 +14,8 @@ import { AppContext } from "@/context/store"
 import { AxiosResponse } from "axios"
 import classNames from "classnames"
 import { useCallback, useContext, useEffect } from "react"
-
+import nookies from 'nookies'
+import { redirect } from "next/dist/server/api-utils"
 interface HomePageProps extends React.PropsWithChildren {
   contacts: any[]
 }
@@ -55,15 +56,28 @@ const HomePage: React.FunctionComponent<HomePageProps> = ({ contacts }): JSX.Ele
 }
 export default HomePage
 
-export async function getServerSideProps() {
+export async function getServerSideProps(ctx: any) {
   let contacts;
+
   try {
+    const cookies = nookies.get(ctx)
+    console.log(cookies);
+    if (!cookies.token) {
+      return (
+        {
+          redirect: {
+            permanent: false,
+            destination: "/login"
+          }
+        }
+      )
+    }
     contacts = await AXIOS.get<any, AxiosResponse<Contacts[]>>(ApiRoutes.GetContacts)
     if (contacts.status == 200) {
       return {
         props: {
-          contacts: contacts.data || null
-        }
+          contacts: contacts.data || null,
+        },
       }
     }
   } catch (error) {
